@@ -1,0 +1,1789 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="theme-color" content="#0f172a"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>WMS Plástico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Barlow:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+/* ══════════════════════════════════════════════
+   VARIABLES Y RESET
+══════════════════════════════════════════════ */
+:root {
+  --bg:         #0b0f1a;
+  --bg2:        #111827;
+  --bg3:        #1e2535;
+  --surface:    #1e293b;
+  --surface2:   #263348;
+  --border:     #2d3f5a;
+  --accent:     #f97316;
+  --accent2:    #fb923c;
+  --accent-dim: rgba(249,115,22,0.15);
+  --green:      #22c55e;
+  --green-dim:  rgba(34,197,94,0.15);
+  --blue:       #38bdf8;
+  --blue-dim:   rgba(56,189,248,0.12);
+  --red:        #f87171;
+  --red-dim:    rgba(248,113,113,0.15);
+  --yellow:     #fbbf24;
+  --yellow-dim: rgba(251,191,36,0.15);
+  --text:       #f1f5f9;
+  --text2:      #94a3b8;
+  --text3:      #64748b;
+  --radius:     14px;
+  --radius-sm:  8px;
+  --shadow:     0 4px 24px rgba(0,0,0,0.4);
+  --font-main:  'Barlow', sans-serif;
+  --font-mono:  'Space Mono', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:var(--font-main);
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overscroll-behavior:none;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer;border:none;outline:none;}
+input,select,textarea{font-family:inherit;outline:none;}
+input:focus,select:focus,textarea:focus{outline:none;}
+
+/* ══════════════════════════════════════════════
+   LAYOUT PRINCIPAL
+══════════════════════════════════════════════ */
+#app{display:flex;flex-direction:column;min-height:100vh;}
+
+/* ══════════════════════════════════════════════
+   TOPBAR
+══════════════════════════════════════════════ */
+.topbar{
+  position:sticky;top:0;z-index:100;
+  background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  padding:0 16px;
+  height:58px;
+  display:flex;align-items:center;justify-content:space-between;
+  backdrop-filter:blur(12px);
+}
+.topbar-left{display:flex;align-items:center;gap:12px;}
+.topbar-logo{
+  font-family:var(--font-mono);
+  font-size:15px;font-weight:700;
+  color:var(--accent);
+  letter-spacing:-0.5px;
+}
+.topbar-logo span{color:var(--text2);font-weight:400;}
+.topbar-role{
+  font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  padding:3px 10px;border-radius:20px;
+}
+.role-admin{background:var(--accent-dim);color:var(--accent);}
+.role-operario{background:var(--green-dim);color:var(--green);}
+.btn-back{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text2);padding:8px 14px;border-radius:var(--radius-sm);
+  font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;
+  transition:all .15s;
+}
+.btn-back:active{transform:scale(0.96);}
+.btn-sync{
+  background:var(--blue-dim);border:1px solid rgba(56,189,248,0.25);
+  color:var(--blue);padding:8px 14px;border-radius:var(--radius-sm);
+  font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;
+  transition:all .15s;
+}
+.btn-sync:active{transform:scale(0.96);}
+.btn-sync.syncing svg{animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ══════════════════════════════════════════════
+   CONTENIDO PRINCIPAL
+══════════════════════════════════════════════ */
+.screen{
+  display:none;flex-direction:column;flex:1;padding:16px;gap:14px;
+  max-width:640px;width:100%;margin:0 auto;
+  animation:fadeUp .2s ease;
+}
+.screen.active{display:flex;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* ══════════════════════════════════════════════
+   LOGIN / PIN
+══════════════════════════════════════════════ */
+#screen-login{
+  justify-content:center;align-items:center;
+  min-height:100vh;padding:24px;max-width:380px;
+}
+.login-brand{text-align:center;margin-bottom:40px;}
+.login-brand-icon{
+  width:72px;height:72px;border-radius:20px;
+  background:linear-gradient(135deg,var(--accent),#ea580c);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;font-size:32px;
+  box-shadow:0 8px 32px rgba(249,115,22,0.3);
+}
+.login-brand h1{font-size:26px;font-weight:900;letter-spacing:-0.5px;}
+.login-brand p{color:var(--text2);font-size:14px;margin-top:4px;}
+.pin-display{
+  background:var(--surface);border:2px solid var(--border);
+  border-radius:var(--radius);padding:18px 24px;
+  font-family:var(--font-mono);font-size:32px;font-weight:700;
+  text-align:center;letter-spacing:12px;color:var(--text);
+  min-height:70px;display:flex;align-items:center;justify-content:center;
+  width:100%;margin-bottom:6px;
+  transition:border-color .2s;
+}
+.pin-display.error{border-color:var(--red);animation:shake .3s;}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-8px);}75%{transform:translateX(8px);}}}
+.pin-label{font-size:12px;color:var(--text3);text-align:center;margin-bottom:20px;}
+.pin-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;
+}
+.pin-btn{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);font-size:22px;font-weight:700;
+  padding:18px;border-radius:var(--radius);
+  transition:all .1s;display:flex;align-items:center;justify-content:center;
+}
+.pin-btn:active{background:var(--accent);border-color:var(--accent);transform:scale(0.94);}
+.pin-btn.wide{grid-column:span 2;}
+.pin-btn.del{background:var(--bg3);color:var(--text2);}
+.pin-btn.enter{background:var(--accent);color:#fff;border-color:var(--accent);}
+.pin-btn.enter:active{background:#ea580c;}
+.login-hint{font-size:12px;color:var(--text3);text-align:center;margin-top:16px;line-height:1.6;}
+
+/* ══════════════════════════════════════════════
+   MENÚ PRINCIPAL
+══════════════════════════════════════════════ */
+.menu-header{
+  text-align:center;padding:20px 0 8px;
+}
+.menu-header h2{font-size:22px;font-weight:800;}
+.menu-header p{color:var(--text2);font-size:14px;margin-top:4px;}
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.menu-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:22px 16px;
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+  cursor:pointer;transition:all .15s;text-align:center;
+  position:relative;overflow:hidden;
+}
+.menu-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent 60%,rgba(255,255,255,0.02));
+}
+.menu-card:active{transform:scale(0.97);border-color:var(--accent);}
+.menu-card-icon{
+  width:52px;height:52px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+}
+.menu-card-label{font-size:14px;font-weight:700;line-height:1.3;}
+.menu-card-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+.menu-card.disabled{opacity:0.35;pointer-events:none;}
+.ic-bovinas{background:var(--blue-dim);}
+.ic-bolsas{background:var(--green-dim);}
+.ic-ing-bov{background:var(--accent-dim);}
+.ic-ing-bls{background:var(--yellow-dim);}
+.ic-prod{background:rgba(167,139,250,0.15);}
+
+/* ══════════════════════════════════════════════
+   SECTION HEADERS
+══════════════════════════════════════════════ */
+.section-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2px;
+}
+.section-hdr h3{font-size:18px;font-weight:800;letter-spacing:-0.3px;}
+.section-hdr span{font-size:12px;color:var(--text3);}
+.divider{height:1px;background:var(--border);border-radius:2px;}
+
+/* ══════════════════════════════════════════════
+   SEARCH BAR
+══════════════════════════════════════════════ */
+.search-wrap{
+  position:relative;
+}
+.search-wrap input{
+  width:100%;background:var(--surface);border:1px solid var(--border);
+  color:var(--text);padding:13px 16px 13px 44px;
+  border-radius:var(--radius);font-size:15px;
+  transition:border-color .2s;
+}
+.search-wrap input:focus{border-color:var(--accent);}
+.search-wrap input::placeholder{color:var(--text3);}
+.search-icon{
+  position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  color:var(--text3);pointer-events:none;
+}
+
+/* ══════════════════════════════════════════════
+   DECK DE BOVINAS
+══════════════════════════════════════════════ */
+.deck-list{display:flex;flex-direction:column;gap:10px;}
+.deck-item{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px;
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;transition:all .15s;
+  gap:12px;
+}
+.deck-item:active{transform:scale(0.985);border-color:var(--accent);}
+.deck-item-left{flex:1;min-width:0;}
+.deck-item-medida{
+  font-size:17px;font-weight:800;font-family:var(--font-mono);
+  color:var(--text);letter-spacing:-0.5px;
+}
+.deck-item-sub{font-size:12px;color:var(--text3);margin-top:3px;}
+.deck-item-badge{
+  font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  padding:3px 9px;border-radius:20px;margin-top:6px;display:inline-block;
+}
+.badge-activa{background:var(--green-dim);color:var(--green);}
+.badge-agotada{background:var(--red-dim);color:var(--red);}
+.deck-item-right{text-align:right;flex-shrink:0;}
+.deck-stock-num{
+  font-size:28px;font-weight:900;font-family:var(--font-mono);
+  color:var(--accent);line-height:1;
+}
+.deck-stock-unit{font-size:11px;color:var(--text3);margin-top:3px;}
+
+/* ══════════════════════════════════════════════
+   DETAIL VIEW (ficha de bovina)
+══════════════════════════════════════════════ */
+.detail-hero{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:20px;
+}
+.detail-medida{
+  font-size:30px;font-weight:900;font-family:var(--font-mono);
+  color:var(--accent);letter-spacing:-1px;
+}
+.detail-proveedor{font-size:14px;color:var(--text2);margin-top:4px;}
+.detail-stats{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px;
+}
+.detail-stat{
+  background:var(--bg3);border-radius:var(--radius-sm);
+  padding:12px 10px;text-align:center;
+}
+.detail-stat-num{font-size:20px;font-weight:800;font-family:var(--font-mono);}
+.detail-stat-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;}
+.history-list{display:flex;flex-direction:column;gap:8px;}
+.history-item{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:14px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.history-item-left{flex:1;}
+.history-date{font-size:12px;color:var(--text3);}
+.history-desc{font-size:14px;font-weight:600;margin-top:2px;}
+.history-sub{font-size:12px;color:var(--text2);margin-top:2px;}
+.history-item-right{text-align:right;}
+.history-amount{font-size:16px;font-weight:800;font-family:var(--font-mono);}
+.history-type-in{color:var(--green);}
+.history-type-out{color:var(--accent);}
+
+/* ══════════════════════════════════════════════
+   STOCK DE BOLSAS
+══════════════════════════════════════════════ */
+.bolsa-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;
+}
+.bolsa-card-medida{
+  font-size:18px;font-weight:800;font-family:var(--font-mono);
+  color:var(--blue);
+}
+.bolsa-card-sub{font-size:12px;color:var(--text3);margin-top:3px;}
+.bolsa-card-qty{
+  font-size:32px;font-weight:900;font-family:var(--font-mono);
+  color:var(--green);text-align:right;
+}
+.bolsa-card-unit{font-size:11px;color:var(--text3);text-align:right;margin-top:2px;}
+
+/* ══════════════════════════════════════════════
+   FORMULARIOS
+══════════════════════════════════════════════ */
+.form-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:20px;
+  display:flex;flex-direction:column;gap:16px;
+}
+.form-row{display:grid;gap:12px;}
+.form-row.cols2{grid-template-columns:1fr 1fr;}
+.form-row.cols3{grid-template-columns:1fr 1fr 1fr;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-label{
+  font-size:11px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:1px;
+}
+.form-input{
+  background:var(--bg3);border:1.5px solid var(--border);
+  color:var(--text);padding:14px 14px;
+  border-radius:var(--radius-sm);font-size:16px;
+  transition:border-color .2s;width:100%;
+}
+.form-input:focus{border-color:var(--accent);}
+.form-input::placeholder{color:var(--text3);}
+.form-input[type="number"]{-moz-appearance:textfield;}
+.form-input[type="number"]::-webkit-outer-spin-button,
+.form-input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;}
+.form-select{
+  background:var(--bg3);border:1.5px solid var(--border);
+  color:var(--text);padding:14px 14px;
+  border-radius:var(--radius-sm);font-size:16px;
+  transition:border-color .2s;width:100%;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:calc(100% - 14px) center;
+  padding-right:40px;
+}
+.form-select:focus{border-color:var(--accent);}
+.calc-preview{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:14px;
+}
+.calc-preview-title{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.calc-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;}
+.calc-row-label{font-size:13px;color:var(--text2);}
+.calc-row-value{font-size:14px;font-weight:700;font-family:var(--font-mono);}
+.calc-divider{height:1px;background:var(--border);margin:8px 0;}
+.calc-total{font-size:16px;font-weight:900;color:var(--accent);}
+
+/* ══════════════════════════════════════════════
+   BOTONES
+══════════════════════════════════════════════ */
+.btn{
+  padding:15px 20px;border-radius:var(--radius);
+  font-size:16px;font-weight:700;
+  transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;
+}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:active{background:#ea580c;}
+.btn-secondary{background:var(--surface);border:1px solid var(--border);color:var(--text2);}
+.btn-green{background:var(--green);color:#fff;}
+.btn-green:active{background:#16a34a;}
+.btn-sm{padding:10px 16px;font-size:13px;border-radius:var(--radius-sm);width:auto;}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text2);}
+.btn-outline:active{border-color:var(--accent);color:var(--accent);}
+
+/* ══════════════════════════════════════════════
+   EMPTY STATE
+══════════════════════════════════════════════ */
+.empty-state{
+  text-align:center;padding:48px 24px;
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+}
+.empty-icon{font-size:48px;opacity:0.3;}
+.empty-title{font-size:16px;font-weight:700;color:var(--text2);}
+.empty-sub{font-size:13px;color:var(--text3);}
+
+/* ══════════════════════════════════════════════
+   TOAST / NOTIFICACIÓN
+══════════════════════════════════════════════ */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);padding:14px 20px;border-radius:var(--radius);
+  font-size:14px;font-weight:600;
+  box-shadow:var(--shadow);z-index:999;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  white-space:nowrap;max-width:90vw;
+  display:flex;align-items:center;gap:10px;
+}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.success{border-left:4px solid var(--green);}
+.toast.error{border-left:4px solid var(--red);}
+.toast.info{border-left:4px solid var(--blue);}
+
+/* ══════════════════════════════════════════════
+   LOADING OVERLAY
+══════════════════════════════════════════════ */
+.loading-overlay{
+  position:fixed;inset:0;background:rgba(11,15,26,0.85);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:200;gap:16px;
+  backdrop-filter:blur(4px);
+}
+.spinner{
+  width:44px;height:44px;border:3px solid var(--border);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+.loading-text{font-size:14px;color:var(--text2);}
+
+/* ══════════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════════ */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.7);
+  z-index:150;display:flex;align-items:flex-end;justify-content:center;
+  padding-bottom:0;animation:fadeIn .15s ease;
+}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.modal{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:20px 20px 0 0;
+  width:100%;max-width:640px;
+  padding:24px 20px 40px;
+  animation:slideUp .25s cubic-bezier(.34,1.56,.64,1);
+  max-height:90vh;overflow-y:auto;
+}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.modal-handle{
+  width:40px;height:4px;background:var(--border);
+  border-radius:2px;margin:0 auto 20px;
+}
+.modal-title{font-size:18px;font-weight:800;margin-bottom:20px;}
+
+/* ══════════════════════════════════════════════
+   TAGS DE ESTADO PRODUCCION
+══════════════════════════════════════════════ */
+.tag{
+  font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;
+}
+.tag::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.tag-activa,.tag-disponible{background:var(--green-dim);color:var(--green);}
+.tag-activa::before,.tag-disponible::before{background:var(--green);}
+.tag-agotada,.tag-sin-stock{background:var(--red-dim);color:var(--red);}
+.tag-agotada::before,.tag-sin-stock::before{background:var(--red);}
+.tag-parcial{background:var(--yellow-dim);color:var(--yellow);}
+.tag-parcial::before{background:var(--yellow);}
+
+/* ══════════════════════════════════════════════
+   MISCELÁNEOS
+══════════════════════════════════════════════ */
+.chip{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:20px;padding:4px 12px;
+  font-size:12px;color:var(--text2);
+}
+.info-box{
+  background:var(--blue-dim);border:1px solid rgba(56,189,248,0.2);
+  border-radius:var(--radius-sm);padding:12px 14px;
+  font-size:13px;color:var(--blue);line-height:1.5;
+}
+.warn-box{
+  background:var(--yellow-dim);border:1px solid rgba(251,191,36,0.2);
+  border-radius:var(--radius-sm);padding:12px 14px;
+  font-size:13px;color:var(--yellow);line-height:1.5;
+}
+.prod-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px;
+  display:flex;flex-direction:column;gap:12px;
+}
+.prod-card-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.prod-card-medida{font-size:22px;font-weight:900;font-family:var(--font-mono);color:var(--text);}
+.prod-card-id{font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-top:2px;}
+.prod-card-info{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+}
+.prod-info-item{background:var(--bg3);border-radius:var(--radius-sm);padding:10px;}
+.prod-info-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;}
+.prod-info-val{font-size:16px;font-weight:700;font-family:var(--font-mono);margin-top:2px;}
+
+/* ══════════════════════════════════════════════
+   SCROLLBAR SUTIL
+══════════════════════════════════════════════ */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVO
+══════════════════════════════════════════════ */
+@media(min-width:640px){
+  .screen{padding:20px 24px;}
+  .menu-grid{grid-template-columns:repeat(3,1fr);}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══════════════════════════════════════
+       TOPBAR (se renderiza dinámicamente)
+  ══════════════════════════════════════ -->
+  <div class="topbar" id="topbar" style="display:none;">
+    <div class="topbar-left">
+      <button class="btn-back" id="btn-back" style="display:none;" onclick="goBack()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+        Volver
+      </button>
+      <div class="topbar-logo" id="topbar-title">WMS<span>/Plástico</span></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="topbar-role" id="topbar-role"></span>
+      <button class="btn-sync" id="btn-sync" onclick="syncData()" title="Sincronizar">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PANTALLA: LOGIN
+  ══════════════════════════════════════ -->
+  <div class="screen active" id="screen-login">
+    <div class="login-brand">
+      <div class="login-brand-icon">🏭</div>
+      <h1>WMS Plástico</h1>
+      <p>Sistema de Gestión de Planta</p>
+    </div>
+    <div class="pin-display" id="pin-display">——</div>
+    <p class="pin-label">Ingresa tu PIN de acceso</p>
+    <div class="pin-grid">
+      <button class="pin-btn" onclick="pinInput('1')">1</button>
+      <button class="pin-btn" onclick="pinInput('2')">2</button>
+      <button class="pin-btn" onclick="pinInput('3')">3</button>
+      <button class="pin-btn" onclick="pinInput('4')">4</button>
+      <button class="pin-btn" onclick="pinInput('5')">5</button>
+      <button class="pin-btn" onclick="pinInput('6')">6</button>
+      <button class="pin-btn" onclick="pinInput('7')">7</button>
+      <button class="pin-btn" onclick="pinInput('8')">8</button>
+      <button class="pin-btn" onclick="pinInput('9')">9</button>
+      <button class="pin-btn del" onclick="pinDelete()">⌫</button>
+      <button class="pin-btn" onclick="pinInput('0')">0</button>
+      <button class="pin-btn enter" onclick="pinConfirm()">✓</button>
+    </div>
+    <p class="login-hint">Admin: <b>1234</b> &nbsp;|&nbsp; Operario: <b>0000</b></p>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PANTALLA: MENÚ PRINCIPAL
+  ══════════════════════════════════════ -->
+  <div class="screen" id="screen-menu">
+    <div class="menu-header">
+      <h2 id="menu-greeting">Buenos días 👋</h2>
+      <p id="menu-date"></p>
+    </div>
+    <div class="menu-grid" id="menu-grid">
+      <!-- Se rellena por JS según rol -->
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PANTALLA: STOCK DE BOVINAS
+  ══════════════════════════════════════ -->
+  <div class="screen" id="screen-stock-bovinas">
+    <div class="section-hdr">
+      <h3>📦 Stock de Bovinas</h3>
+      <span id="bovinas-count">0 items</span>
+    </div>
+    <div class="search-wrap">
+      <svg class="search-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="search-bovinas" placeholder="Buscar por medida o proveedor..." oninput="renderBovinasList()" class="form-input" style="padding-left:44px;"/>
+    </div>
+    <!-- Filtros de estado -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-sm btn-primary" onclick="filterBovinas('todas')" id="filter-todas">Todas</button>
+      <button class="btn btn-sm btn-outline" onclick="filterBovinas('activa')" id="filter-activa">Activas</button>
+      <button class="btn btn-sm btn-outline" onclick="filterBovinas('agotada')" id="filter-agotada">Agotadas</button>
+    </div>
+    <div class="deck-list" id="bovinas-list">
+      <!-- Deck items se renderizan por JS -->
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PANTALLA: DETALLE DE BOVINA
+  ══════════════════════════════════════ -->
+  <div class="screen" id="screen-detalle-bovina">
+    <div class="detail-hero" id="detail-hero">
+      <!-- Renderizado por JS -->
+    </div>
+    <div class="section-hdr">
+      <h3>📋 Historial</h3>
+    </div>
+    <div class="divider"></div>
+    <div class="history-list" id="detail-history">
+      <!-- Historial de ingresos y producción -->
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PANTALLA: STOCK DE BOLSAS
+  ══════════════════════════════════════ -->
+  <div class="screen" id="screen-stock-bolsas">
+    <div class="section-hdr">
+      <h3>🛍️ Stock de Bolsas</h3>
+      <span id="bolsas-count">0 tipos</span>
+    </div>
+    <div class="search-wrap">
+      <svg class="search-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="search-bolsas" placeholder="Buscar por medida..." oninput="renderBolsasList()" class="form-input" style="padding-left:44px;"/>
+    </div>
+    <div class="deck-list" id="bolsas-list">
+      <!-- Bolsas cards se renderizan por JS -->
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PANTALLA: INGRESO DE BOVINAS
+  ══════════════════════════════════════ -->
+  <div class="screen" id="screen-ingreso-bovinas">
+    <div class="section-hdr">
+      <h3>➕ Ingreso de Bovina</h3>
+    </div>
+    <div class="form-card">
+      <div class="form-row cols2">
+        <div class="form-group">
+          <label class="form-label">Fecha *</label>
+          <input type="date" id="ib-fecha" class="form-input"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Proveedor *</label>
+          <input type="text" id="ib-proveedor" placeholder="Nombre proveedor" class="form-input"/>
+        </div>
+      </div>
+      <div class="form-row cols3">
+        <div class="form-group">
+          <label class="form-label">Ancho (cm) *</label>
+          <input type="number" id="ib-ancho" placeholder="20" class="form-input" step="0.1" oninput="updateBovinaPreview()"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Espesor (mm) *</label>
+          <input type="number" id="ib-espesor" placeholder="1.8" class="form-input" step="0.1" oninput="updateBovinaPreview()"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Peso (kg) *</label>
+          <input type="number" id="ib-peso" placeholder="50" class="form-input" step="0.1"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observaciones</label>
+        <input type="text" id="ib-obs" placeholder="Opcional..." class="form-input"/>
+      </div>
+      <div class="calc-preview" id="bovina-preview" style="display:none;">
+        <div class="calc-preview-title">Vista previa de medida</div>
+        <div class="calc-row">
+          <span class="calc-row-label">Medida</span>
+          <span class="calc-row-value" id="prev-medida-bov" style="color:var(--blue);">—</span>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="submitIngresoBovina()">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        Registrar Ingreso
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PANTALLA: INGRESO DE BOLSAS
+  ══════════════════════════════════════ -->
+  <div class="screen" id="screen-ingreso-bolsas">
+    <div class="section-hdr">
+      <h3>➕ Ingreso de Bolsas</h3>
+    </div>
+    <div class="info-box">
+      💡 Usa este módulo para registrar bolsas sueltas que no provienen de producción registrada.
+    </div>
+    <div class="form-card">
+      <div class="form-row cols2">
+        <div class="form-group">
+          <label class="form-label">Fecha *</label>
+          <input type="date" id="ibls-fecha" class="form-input"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Operario / Responsable</label>
+          <input type="text" id="ibls-operario" placeholder="Nombre" class="form-input"/>
+        </div>
+      </div>
+      <div class="form-row cols3">
+        <div class="form-group">
+          <label class="form-label">Ancho (cm) *</label>
+          <input type="number" id="ibls-ancho" placeholder="20" class="form-input" step="0.1" oninput="updateBolsaPreview()"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Largo (cm) *</label>
+          <input type="number" id="ibls-largo" placeholder="30" class="form-input" step="0.1" oninput="updateBolsaPreview()"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Espesor (mm) *</label>
+          <input type="number" id="ibls-espesor" placeholder="1.8" class="form-input" step="0.1" oninput="updateBolsaPreview()"/>
+        </div>
+      </div>
+      <div class="form-row cols2">
+        <div class="form-group">
+          <label class="form-label">Cantidad (unidades) *</label>
+          <input type="number" id="ibls-cantidad" placeholder="500" class="form-input"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Motivo</label>
+          <input type="text" id="ibls-motivo" placeholder="Ej: Stock no registrado" class="form-input"/>
+        </div>
+      </div>
+      <div class="calc-preview" id="bolsa-preview" style="display:none;">
+        <div class="calc-preview-title">Vista previa</div>
+        <div class="calc-row">
+          <span class="calc-row-label">Medida bolsa</span>
+          <span class="calc-row-value" id="prev-medida-bls" style="color:var(--green);">—</span>
+        </div>
+      </div>
+      <button class="btn btn-green" onclick="submitIngresoBolsas()">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        Registrar Bolsas
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       PANTALLA: REGISTRO DE PRODUCCIÓN
+  ══════════════════════════════════════ -->
+  <div class="screen" id="screen-produccion">
+    <div class="section-hdr">
+      <h3>⚙️ Registro de Producción</h3>
+    </div>
+    <div class="form-card">
+      <div class="form-row cols2">
+        <div class="form-group">
+          <label class="form-label">Fecha *</label>
+          <input type="date" id="pr-fecha" class="form-input"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Operario *</label>
+          <input type="text" id="pr-operario" placeholder="Nombre operario" class="form-input"/>
+        </div>
+      </div>
+      <!-- Selector de bovina activa -->
+      <div class="form-group">
+        <label class="form-label">Bovina a trabajar *</label>
+        <select id="pr-bovina" class="form-select" onchange="onBovinaSeleccionada()">
+          <option value="">— Selecciona una bovina activa —</option>
+        </select>
+      </div>
+      <!-- Info de bovina seleccionada -->
+      <div id="pr-bovina-info" style="display:none;">
+        <div class="prod-card">
+          <div class="prod-card-top">
+            <div>
+              <div class="prod-card-medida" id="pr-bov-medida">—</div>
+              <div class="prod-card-id" id="pr-bov-id">ID: —</div>
+            </div>
+            <div id="pr-bov-estado"></div>
+          </div>
+          <div class="prod-card-info">
+            <div class="prod-info-item">
+              <div class="prod-info-lbl">Peso disponible</div>
+              <div class="prod-info-val" id="pr-bov-disponible" style="color:var(--accent);">— kg</div>
+            </div>
+            <div class="prod-info-item">
+              <div class="prod-info-lbl">Proveedor</div>
+              <div class="prod-info-val" id="pr-bov-prov" style="font-size:13px;">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Datos de producción -->
+      <div class="form-row cols3">
+        <div class="form-group">
+          <label class="form-label">Largo corte (cm) *</label>
+          <input type="number" id="pr-largo" placeholder="30" class="form-input" step="0.1" oninput="updateProdPreview()"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bolsas producidas *</label>
+          <input type="number" id="pr-bolsas" placeholder="3000" class="form-input" oninput="updateProdPreview()"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">KG consumidos *</label>
+          <input type="number" id="pr-kg" placeholder="12.5" class="form-input" step="0.1" oninput="updateProdPreview()"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observaciones</label>
+        <input type="text" id="pr-obs" placeholder="Opcional..." class="form-input"/>
+      </div>
+      <!-- Vista previa del resultado -->
+      <div class="calc-preview" id="prod-preview" style="display:none;">
+        <div class="calc-preview-title">📊 Resultado de esta sesión</div>
+        <div class="calc-row">
+          <span class="calc-row-label">Bovina trabajada</span>
+          <span class="calc-row-value" id="pv-medida-bov" style="color:var(--blue);">—</span>
+        </div>
+        <div class="calc-row">
+          <span class="calc-row-label">Bolsa resultante</span>
+          <span class="calc-row-value" id="pv-medida-bls" style="color:var(--green);">—</span>
+        </div>
+        <div class="calc-divider"></div>
+        <div class="calc-row">
+          <span class="calc-row-label">Bolsas al inventario</span>
+          <span class="calc-row-value calc-total" id="pv-bolsas">—</span>
+        </div>
+        <div class="calc-row">
+          <span class="calc-row-label">KG descontados de bovina</span>
+          <span class="calc-row-value" id="pv-kg" style="color:var(--red);">—</span>
+        </div>
+        <div class="calc-row">
+          <span class="calc-row-label">KG restantes en bovina</span>
+          <span class="calc-row-value" id="pv-kg-restantes" style="color:var(--yellow);">—</span>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="submitProduccion()">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+        Registrar Producción
+      </button>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading" style="display:none;">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">Sincronizando...</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════
+//  ⚙️ CONFIGURACIÓN — EDITAR AQUÍ
+// ══════════════════════════════════════════════
+const CONFIG = {
+  // 👇 Pega la URL de tu Web App de Google Apps Script aquí
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/TU_URL_AQUI/exec',
+
+  // PINs de acceso
+  PINS: {
+    '1234': 'ADMIN',
+    '0000': 'OPERARIO',
+  },
+
+  // Módulos visibles por rol
+  MODULES_BY_ROLE: {
+    ADMIN:    ['stock-bovinas','stock-bolsas','ingreso-bovinas','ingreso-bolsas','produccion'],
+    OPERARIO: ['stock-bovinas','stock-bolsas','produccion'],
+  },
+};
+
+// ══════════════════════════════════════════════
+//  🗃️ ESTADO GLOBAL DE LA APP
+// ══════════════════════════════════════════════
+const STATE = {
+  role:           null,    // 'ADMIN' | 'OPERARIO'
+  currentScreen:  'login',
+  previousScreen: null,
+  data: {
+    BOVINAS:          [],
+    BOLSAS:           [],
+    INGRESOS_BOVINAS: [],
+    INGRESOS_BOLSAS:  [],
+    PRODUCCION:       [],
+  },
+  // Filtro activo en stock bovinas
+  bovinaFilter: 'todas',
+  // Detalle bovina actualmente abierta
+  currentBovinaId: null,
+};
+
+// ══════════════════════════════════════════════
+//  🧹 SANITIZACIÓN ROBUSTA DE DATOS
+//  Se aplica en CADA operación de lectura/escritura
+// ══════════════════════════════════════════════
+/**
+ * Limpia un valor de texto:
+ * - Elimina saltos de línea y tabuladores
+ * - Trim robusto (regex, más fuerte que .trim() nativo)
+ * - Colapsa espacios múltiples a uno solo
+ */
+function sanitize(val) {
+  if (val === null || val === undefined) return '';
+  return String(val)
+    .replace(/[\r\n\t]/g, ' ')        // saltos de línea → espacio
+    .replace(/^\s+|\s+$/g, '')        // trim robusto inicio y fin
+    .replace(/\s+/g, ' ');            // múltiples espacios → uno
+}
+
+/**
+ * Compara dos strings sanitizados en minúsculas
+ * para evitar problemas de casing
+ */
+function sanitizeEq(a, b) {
+  return sanitize(a).toLowerCase() === sanitize(b).toLowerCase();
+}
+
+/**
+ * Sanitiza un objeto completo (todas sus claves)
+ */
+function sanitizeObj(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  const clean = {};
+  for (const key of Object.keys(obj)) {
+    const val = obj[key];
+    clean[key] = (typeof val === 'string') ? sanitize(val) : val;
+  }
+  return clean;
+}
+
+// ══════════════════════════════════════════════
+//  📅 UTILIDADES DE FECHA Y UI
+// ══════════════════════════════════════════════
+function todayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function formatDate(str) {
+  if (!str) return '—';
+  const d = new Date(str + 'T00:00:00');
+  return d.toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Buenos días 👋';
+  if (h < 18) return 'Buenas tardes 👋';
+  return 'Buenas noches 👋';
+}
+
+function formatDateLong() {
+  return new Date().toLocaleDateString('es-PE', {
+    weekday:'long', day:'numeric', month:'long', year:'numeric'
+  });
+}
+
+// ══════════════════════════════════════════════
+//  🔔 TOAST (notificaciones)
+// ══════════════════════════════════════════════
+let toastTimer = null;
+function showToast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  el.textContent = '';
+  const icons = { success:'✅', error:'❌', info:'ℹ️' };
+  el.textContent = (icons[type] || '') + ' ' + msg;
+  el.className = `toast ${type} show`;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.classList.remove('show'); }, 3200);
+}
+
+// ══════════════════════════════════════════════
+//  ⏳ LOADING OVERLAY
+// ══════════════════════════════════════════════
+function showLoading(msg = 'Procesando...') {
+  document.getElementById('loading-text').textContent = msg;
+  document.getElementById('loading').style.display = 'flex';
+}
+function hideLoading() {
+  document.getElementById('loading').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════
+//  🔐 LOGIN / PIN
+// ══════════════════════════════════════════════
+let pinBuffer = '';
+
+function pinInput(digit) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += digit;
+  updatePinDisplay();
+}
+
+function pinDelete() {
+  pinBuffer = pinBuffer.slice(0, -1);
+  updatePinDisplay();
+}
+
+function updatePinDisplay() {
+  const el = document.getElementById('pin-display');
+  if (pinBuffer.length === 0) {
+    el.textContent = '——';
+    el.style.letterSpacing = '12px';
+  } else {
+    el.textContent = '●'.repeat(pinBuffer.length) + '—'.repeat(4 - pinBuffer.length);
+  }
+  el.classList.remove('error');
+}
+
+function pinConfirm() {
+  const role = CONFIG.PINS[pinBuffer];
+  if (role) {
+    STATE.role = role;
+    loginSuccess(role);
+  } else {
+    // Error de PIN
+    const el = document.getElementById('pin-display');
+    el.classList.add('error');
+    el.textContent = 'PIN incorrecto';
+    setTimeout(() => {
+      pinBuffer = '';
+      updatePinDisplay();
+    }, 900);
+  }
+}
+
+function loginSuccess(role) {
+  // Mostrar topbar
+  document.getElementById('topbar').style.display = 'flex';
+  // Badge de rol
+  const roleEl = document.getElementById('topbar-role');
+  if (role === 'ADMIN') {
+    roleEl.textContent = 'Admin';
+    roleEl.className = 'topbar-role role-admin';
+  } else {
+    roleEl.textContent = 'Operario';
+    roleEl.className = 'topbar-role role-operario';
+  }
+  // Ir al menú
+  navigateTo('menu');
+  // Sincronizar datos
+  syncData();
+}
+
+// ══════════════════════════════════════════════
+//  🔄 SINCRONIZACIÓN CON GOOGLE SHEETS
+// ══════════════════════════════════════════════
+async function syncData() {
+  const btn = document.getElementById('btn-sync');
+  btn.classList.add('syncing');
+  showLoading('Sincronizando con Google Sheets...');
+
+  try {
+    const url = CONFIG.APPS_SCRIPT_URL + '?action=getAll&t=' + Date.now();
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+
+    // Guardar datos sanitizados
+    for (const key of Object.keys(STATE.data)) {
+      if (json[key]) {
+        STATE.data[key] = json[key].map(sanitizeObj);
+      }
+    }
+    // También guardar en localStorage como caché offline
+    localStorage.setItem('wms_cache', JSON.stringify(STATE.data));
+    localStorage.setItem('wms_cache_ts', Date.now().toString());
+
+    showToast('Datos sincronizados correctamente', 'success');
+    // Re-renderizar pantalla actual si aplica
+    rerenderCurrentScreen();
+
+  } catch (err) {
+    console.error('Sync error:', err);
+    // Intentar cargar desde caché
+    loadFromCache();
+    showToast('Sin conexión — cargando datos locales', 'error');
+  } finally {
+    btn.classList.remove('syncing');
+    hideLoading();
+  }
+}
+
+function loadFromCache() {
+  const cache = localStorage.getItem('wms_cache');
+  if (cache) {
+    try {
+      const parsed = JSON.parse(cache);
+      for (const key of Object.keys(STATE.data)) {
+        if (parsed[key]) STATE.data[key] = parsed[key].map(sanitizeObj);
+      }
+    } catch(e) { /* ignore */ }
+  }
+}
+
+async function postData(action, payload) {
+  const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, payload }),
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+// ══════════════════════════════════════════════
+//  🧭 NAVEGACIÓN
+// ══════════════════════════════════════════════
+function navigateTo(screenId) {
+  // Ocultar todas
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  // Mostrar la correcta
+  const target = document.getElementById('screen-' + screenId);
+  if (!target) return;
+  target.classList.add('active');
+
+  const prev = STATE.currentScreen;
+  STATE.previousScreen = prev;
+  STATE.currentScreen  = screenId;
+
+  // Topbar: botón back y título
+  const backBtn   = document.getElementById('btn-back');
+  const topTitle  = document.getElementById('topbar-title');
+
+  const titles = {
+    'menu':             'WMS<span>/Plástico</span>',
+    'stock-bovinas':    'Stock Bovinas',
+    'stock-bolsas':     'Stock Bolsas',
+    'ingreso-bovinas':  'Ingreso Bovina',
+    'ingreso-bolsas':   'Ingreso Bolsas',
+    'produccion':       'Producción',
+    'detalle-bovina':   'Ficha Bovina',
+  };
+
+  topTitle.innerHTML = titles[screenId] || 'WMS';
+  backBtn.style.display = (screenId === 'menu') ? 'none' : 'flex';
+
+  // Login: ocultar topbar completamente
+  if (screenId === 'login') {
+    document.getElementById('topbar').style.display = 'none';
+  }
+
+  // Inicializar datos de la pantalla
+  initScreen(screenId);
+}
+
+function goBack() {
+  const prev = STATE.previousScreen || 'menu';
+  navigateTo(prev);
+}
+
+function rerenderCurrentScreen() {
+  initScreen(STATE.currentScreen);
+}
+
+function initScreen(screenId) {
+  switch(screenId) {
+    case 'menu':            renderMenu();          break;
+    case 'stock-bovinas':   renderBovinasList();   break;
+    case 'stock-bolsas':    renderBolsasList();    break;
+    case 'ingreso-bovinas': initIngresoBovinaForm(); break;
+    case 'ingreso-bolsas':  initIngresoBolsasForm(); break;
+    case 'produccion':      initProduccionForm();  break;
+    case 'detalle-bovina':  renderDetalleBovina(); break;
+  }
+}
+
+// ══════════════════════════════════════════════
+//  🏠 MENÚ PRINCIPAL
+// ══════════════════════════════════════════════
+function renderMenu() {
+  document.getElementById('menu-greeting').textContent = getGreeting();
+  document.getElementById('menu-date').textContent = formatDateLong();
+
+  const allowed = CONFIG.MODULES_BY_ROLE[STATE.role] || [];
+
+  const menuItems = [
+    {
+      id:    'stock-bovinas',
+      icon:  '📦',
+      label: 'Stock de Bovinas',
+      sub:   'Ver inventario de materia prima',
+      color: 'ic-bovinas',
+      roles: ['ADMIN','OPERARIO'],
+    },
+    {
+      id:    'stock-bolsas',
+      icon:  '🛍️',
+      label: 'Stock de Bolsas',
+      sub:   'Ver inventario de producto terminado',
+      color: 'ic-bolsas',
+      roles: ['ADMIN','OPERARIO'],
+    },
+    {
+      id:    'produccion',
+      icon:  '⚙️',
+      label: 'Registrar Producción',
+      sub:   'Convertir bovina en bolsas',
+      color: 'ic-prod',
+      roles: ['ADMIN','OPERARIO'],
+    },
+    {
+      id:    'ingreso-bovinas',
+      icon:  '📥',
+      label: 'Ingreso Bovina',
+      sub:   'Registrar nueva materia prima',
+      color: 'ic-ing-bov',
+      roles: ['ADMIN'],
+    },
+    {
+      id:    'ingreso-bolsas',
+      icon:  '📦',
+      label: 'Ingreso Bolsas',
+      sub:   'Agregar bolsas sueltas al stock',
+      color: 'ic-ing-bls',
+      roles: ['ADMIN'],
+    },
+  ];
+
+  const grid = document.getElementById('menu-grid');
+  grid.innerHTML = menuItems
+    .filter(item => item.roles.includes(STATE.role))
+    .map(item => `
+      <div class="menu-card" onclick="navigateTo('${item.id}')">
+        <div class="menu-card-icon ${item.color}">${item.icon}</div>
+        <div>
+          <div class="menu-card-label">${item.label}</div>
+          <div class="menu-card-sub">${item.sub}</div>
+        </div>
+      </div>
+    `).join('');
+}
+
+// ══════════════════════════════════════════════
+//  📦 STOCK DE BOVINAS
+// ══════════════════════════════════════════════
+
+/**
+ * Calcula el stock disponible de una bovina
+ * sumando todos sus ingresos y restando el consumo de producción
+ */
+function calcStockBovina(bovinaId) {
+  const bov = STATE.data.BOVINAS.find(b =>
+    sanitize(b.ID).toLowerCase() === sanitize(bovinaId).toLowerCase()
+  );
+  if (!bov) return 0;
+  // Peso disponible viene calculado en el backend
+  const val = parseFloat(bov.PESO_DISPONIBLE_KG) || 0;
+  return Math.max(0, val);
+}
+
+function filterBovinas(filter) {
+  STATE.bovinaFilter = filter;
+  // Actualizar estilos de botones de filtro
+  ['todas','activa','agotada'].forEach(f => {
+    const btn = document.getElementById('filter-' + f);
+    if (!btn) return;
+    btn.className = f === filter
+      ? 'btn btn-sm btn-primary'
+      : 'btn btn-sm btn-outline';
+  });
+  renderBovinasList();
+}
+
+function renderBovinasList() {
+  const query  = sanitize(document.getElementById('search-bovinas')?.value || '').toLowerCase();
+  const filter = STATE.bovinaFilter;
+
+  let bovinas = STATE.data.BOVINAS.slice();
+
+  // Filtrar por estado
+  if (filter !== 'todas') {
+    bovinas = bovinas.filter(b =>
+      sanitize(b.ESTADO).toLowerCase() === filter
+    );
+  }
+
+  // Filtrar por búsqueda
+  if (query) {
+    bovinas = bovinas.filter(b => {
+      const medida   = `${b.ANCHO}x${b.ESPESOR}`.toLowerCase();
+      const proveedor = sanitize(b.PROVEEDOR).toLowerCase();
+      return medida.includes(query) || proveedor.includes(query);
+    });
+  }
+
+  // Ordenar: activas primero
+  bovinas.sort((a, b) => {
+    const ea = sanitize(a.ESTADO).toLowerCase();
+    const eb = sanitize(b.ESTADO).toLowerCase();
+    if (ea === 'activa' && eb !== 'activa') return -1;
+    if (ea !== 'activa' && eb === 'activa') return  1;
+    return 0;
+  });
+
+  const list = document.getElementById('bovinas-list');
+  const countEl = document.getElementById('bovinas-count');
+  countEl.textContent = bovinas.length + ' items';
+
+  if (bovinas.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📦</div>
+        <div class="empty-title">Sin bovinas encontradas</div>
+        <div class="empty-sub">${query ? 'Prueba con otra búsqueda' : 'Registra un ingreso para comenzar'}</div>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = bovinas.map(bov => {
+    const kg       = parseFloat(bov.PESO_DISPONIBLE_KG) || 0;
+    const estado   = sanitize(bov.ESTADO).toLowerCase();
+    const badgeClass = estado === 'activa' ? 'badge-activa' : 'badge-agotada';
+    const badgeTxt   = estado === 'activa' ? 'ACTIVA' : 'AGOTADA';
+
+    return `
+    <div class="deck-item" onclick="openDetalleBovina('${sanitize(bov.ID)}')">
+      <div class="deck-item-left">
+        <div class="deck-item-medida">${sanitize(bov.ANCHO)} × ${sanitize(bov.ESPESOR)} mm</div>
+        <div class="deck-item-sub">
+          ${sanitize(bov.PROVEEDOR)} &nbsp;·&nbsp; Ingreso: ${formatDate(bov.FECHA_INGRESO)}
+        </div>
+        <span class="deck-item-badge ${badgeClass}">${badgeTxt}</span>
+      </div>
+      <div class="deck-item-right">
+        <div class="deck-stock-num">${kg.toFixed(1)}</div>
+        <div class="deck-stock-unit">kg disponibles</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Detalle de bovina ──────────────────────────────────────
+function openDetalleBovina(id) {
+  STATE.currentBovinaId = id;
+  navigateTo('detalle-bovina');
+}
+
+function renderDetalleBovina() {
+  const id  = STATE.currentBovinaId;
+  const bov = STATE.data.BOVINAS.find(b =>
+    sanitize(b.ID).toLowerCase() === sanitize(id).toLowerCase()
+  );
+  if (!bov) return;
+
+  const disponible = parseFloat(bov.PESO_DISPONIBLE_KG) || 0;
+  const inicial    = parseFloat(bov.PESO_INICIAL_KG)    || 0;
+  const consumido  = Math.max(0, inicial - disponible);
+  const pct        = inicial > 0 ? Math.round((disponible / inicial) * 100) : 0;
+  const estado     = sanitize(bov.ESTADO).toLowerCase();
+
+  // Hero
+  document.getElementById('detail-hero').innerHTML = `
+    <div class="detail-medida">${sanitize(bov.ANCHO)} × ${sanitize(bov.ESPESOR)} mm</div>
+    <div class="detail-proveedor">
+      📍 ${sanitize(bov.PROVEEDOR)} &nbsp;&nbsp;
+      <span class="tag tag-${estado}">${estado.toUpperCase()}</span>
+    </div>
+    <div class="detail-stats">
+      <div class="detail-stat">
+        <div class="detail-stat-num" style="color:var(--accent)">${disponible.toFixed(1)}</div>
+        <div class="detail-stat-lbl">kg disponibles</div>
+      </div>
+      <div class="detail-stat">
+        <div class="detail-stat-num" style="color:var(--text2)">${inicial.toFixed(1)}</div>
+        <div class="detail-stat-lbl">kg iniciales</div>
+      </div>
+      <div class="detail-stat">
+        <div class="detail-stat-num" style="color:var(--red)">${consumido.toFixed(1)}</div>
+        <div class="detail-stat-lbl">kg consumidos</div>
+      </div>
+    </div>
+    <div style="margin-top:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:6px;">
+        <span>Disponibilidad</span><span>${pct}%</span>
+      </div>
+      <div style="height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:${pct > 30 ? 'var(--green)' : 'var(--red)'};border-radius:4px;transition:width .5s;"></div>
+      </div>
+    </div>
+  `;
+
+  // Historial: combina ingresos + producción de esta bovina
+  const ingresos = STATE.data.INGRESOS_BOVINAS.filter(r =>
+    sanitize(r.ID).toLowerCase() === sanitize(id).toLowerCase()
+  );
+
+  const sesiones = STATE.data.PRODUCCION.filter(r =>
+    sanitize(r.ID_BOVINA).toLowerCase() === sanitize(id).toLowerCase()
+  );
+
+  // Construir timeline combinado
+  const timeline = [
+    ...ingresos.map(r => ({
+      tipo:  'ingreso',
+      fecha: sanitize(r.FECHA),
+      desc:  'Ingreso de bovina',
+      sub:   `Proveedor: ${sanitize(r.PROVEEDOR)}`,
+      val:   `+${parseFloat(r.PESO_KG).toFixed(1)} kg`,
+      color: 'history-type-in',
+    })),
+    ...sesiones.map(r => ({
+      tipo:  'produccion',
+      fecha: sanitize(r.FECHA),
+      desc:  `Producción: ${sanitize(r.BOLSAS_PRODUCIDAS)} bolsas`,
+      sub:   `Operario: ${sanitize(r.OPERARIO)} · Largo: ${sanitize(r.LARGO_CORTE)} cm`,
+      val:   `-${parseFloat(r.KG_CONSUMIDOS).toFixed(1)} kg`,
+      color: 'history-type-out',
+    })),
+  ].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+  const histEl = document.getElementById('detail-history');
+  if (timeline.length === 0) {
+    histEl.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Sin historial aún</div></div>`;
+    return;
+  }
+
+  histEl.innerHTML = timeline.map(item => `
+    <div class="history-item">
+      <div class="history-item-left">
+        <div class="history-date">${formatDate(item.fecha)}</div>
+        <div class="history-desc">${item.desc}</div>
+        <div class="history-sub">${item.sub}</div>
+      </div>
+      <div class="history-item-right">
+        <div class="history-amount ${item.color}">${item.val}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════
+//  🛍️ STOCK DE BOLSAS
+// ══════════════════════════════════════════════
+function renderBolsasList() {
+  const query = sanitize(document.getElementById('search-bolsas')?.value || '').toLowerCase();
+
+  let bolsas = STATE.data.BOLSAS.slice();
+
+  if (query) {
+    bolsas = bolsas.filter(b => {
+      const medida = `${b.ANCHO}x${b.LARGO}x${b.ESPESOR}`.toLowerCase();
+      return medida.includes(query);
+    });
+  }
+
+  // Ordenar por cantidad desc
+  bolsas.sort((a, b) =>
+    (parseFloat(b.UNIDADES_DISPONIBLES) || 0) - (parseFloat(a.UNIDADES_DISPONIBLES) || 0)
+  );
+
+  const list    = document.getElementById('bolsas-list');
+  const countEl = document.getElementById('bolsas-count');
+  countEl.textContent = bolsas.length + ' tipos';
+
+  if (bolsas.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🛍️</div>
+        <div class="empty-title">Sin bolsas en stock</div>
+        <div class="empty-sub">Registra producción o agrega bolsas sueltas</div>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = bolsas.map(bls => {
+    const qty    = parseFloat(bls.UNIDADES_DISPONIBLES) || 0;
+    const medida = `${sanitize(bls.ANCHO)} × ${sanitize(bls.LARGO)} × ${sanitize(bls.ESPESOR)}`;
+    const low    = qty < 100;
+
+    return `
+    <div class="bolsa-card">
+      <div>
+        <div class="bolsa-card-medida">${medida} mm</div>
+        <div class="bolsa-card-sub">
+          Última actualización: ${formatDate(bls.ULTIMA_ACTUALIZACION)}
+        </div>
+        <span class="tag ${low ? 'tag-sin-stock' : 'tag-disponible'}" style="margin-top:8px;">
+          ${low ? 'STOCK BAJO' : 'DISPONIBLE'}
+        </span>
+      </div>
+      <div>
+        <div class="bolsa-card-qty">${qty.toLocaleString('es-PE')}</div>
+        <div class="bolsa-card-unit">unidades</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+//  📥 FORMULARIO: INGRESO DE BOVINAS
+// ══════════════════════════════════════════════
+function initIngresoBovinaForm() {
+  document.getElementById('ib-fecha').value     = todayStr();
+  document.getElementById('ib-proveedor').value = '';
+  document.getElementById('ib-ancho').value     = '';
+  document.getElementById('ib-espesor').value   = '';
+  document.getElementById('ib-peso').value      = '';
+  document.getElementById('ib-obs').value       = '';
+  document.getElementById('bovina-preview').style.display = 'none';
+}
+
+function updateBovinaPreview() {
+  const ancho   = document.getElementById('ib-ancho').value;
+  const espesor = document.getElementById('ib-espesor').value;
+  const prev    = document.getElementById('bovina-preview');
+
+  if (ancho && espesor) {
+    prev.style.display = 'block';
+    document.getElementById('prev-medida-bov').textContent =
+      `${ancho} × ${espesor} mm (sin largo — bovina)`;
+  } else {
+    prev.style.display = 'none';
+  }
+}
+
+async function submitIngresoBovina() {
+  const fecha    = sanitize(document.getElementById('ib-fecha').value);
+  const proveedor = sanitize(document.getElementById('ib-proveedor').value);
+  const ancho    = sanitize(document.getElementById('ib-ancho').value);
+  const espesor  = sanitize(document.getElementById('ib-espesor').value);
+  const peso     = sanitize(document.getElementById('ib-peso').value);
+  const obs      = sanitize(document.getElementById('ib-obs').value);
+
+  // Validación
+  if (!proveedor || !ancho || !espesor || !peso) {
+    showToast('Completa todos los campos obligatorios (*)', 'error');
+    return;
+  }
+
+  showLoading('Registrando bovina...');
+
+  try {
+    const result = await postData('ingresoBovina', {
+      fecha, proveedor,
+      ancho: Number(ancho), espesor: Number(espesor),
+      peso_kg: Number(peso), observaciones: obs,
+    });
+
+    if (result.ok) {
+      showToast('Bovina registrada correctamente ✓', 'success');
+      // Actualizar datos locales optimistamente
+      await syncData();
+      initIngresoBovinaForm();
+    } else {
+      throw new Error(result.error || 'Error desconocido');
+    }
+  } catch(err) {
+    console.error(err);
+    showToast('Error al registrar: ' + err.message, 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+// ══════════════════════════════════════════════
+//  📦 FORMULARIO: INGRESO DE BOLSAS
+// ══════════════════════════════════════════════
+function initIngresoBolsasForm() {
+  document.getElementById('ibls-fecha').value    = todayStr();
+  document.getElementById('ibls-operario').value = '';
+  document.getElementById('ibls-ancho').value    = '';
+  document.getElementById('ibls-largo').value    = '';
+  document.getElementById('ibls-espesor').value  = '';
+  document.getElementById('ibls-cantidad').value = '';
+  document.getElementById('ibls-motivo').value   = '';
+  document.getElementById('bolsa-preview').style.display = 'none';
+}
+
+function updateBolsaPreview() {
+  const a = document.getElementById('ibls-ancho').value;
+  const l = document.getElementById('ibls-largo').value;
+  const e = document.getElementById('ibls-espesor').value;
+  const prev = document.getElementById('bolsa-preview');
+
+  if (a && l && e) {
+    prev.style.display = 'block';
+    document.getElementById('prev-medida-bls').textContent =
+      `${a} × ${l} × ${e} mm`;
+  } else {
+    prev.style.display = 'none';
+  }
+}
+
+async function submitIngresoBolsas() {
+  const fecha    = sanitize(document.getElementById('ibls-fecha').value);
+  const operario = sanitize(document.getElementById('ibls-operario').value);
+  const ancho    = sanitize(document.getElementById('ibls-ancho').value);
+  const largo    = sanitize(document.getElementById('ibls-largo').value);
+  const espesor  = sanitize(document.getElementById('ibls-espesor').value);
+  const cantidad = sanitize(document.getElementById('ibls-cantidad').value);
+  const motivo   = sanitize(document.getElementById('ibls-motivo').value);
+
+  if (!ancho || !largo || !espesor || !cantidad) {
+    showToast('Completa todos los campos obligatorios (*)', 'error');
+    return;
+  }
+
+  showLoading('Registrando bolsas...');
+
+  try {
+    const result = await postData('ingresoBolsas', {
+      fecha, operario,
+      ancho: Number(ancho), largo: Number(largo),
+      espesor: Number(espesor), cantidad: Number(cantidad),
+      motivo,
+    });
+
+    if (result.ok) {
+      showToast(`${Number(cantidad).toLocaleString()} bolsas agregadas al stock ✓`, 'success');
+      await syncData();
+      initIngresoBolsasForm();
+    } else {
+      throw new Error(result.error || 'Error desconocido');
+    }
+  } catch(err) {
+    showToast('Error al registrar: ' + err.message, 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+// ══════════════════════════════════════════════
+//  ⚙️ FORMULARIO: REGISTRO DE PRODUCCIÓN
+// ══════════════════════════════════════════════
+function initProduccionForm() {
+  document.getElementById('pr-fecha').value    = todayStr();
+  document.getElementById('pr-operario').value = '';
+  document.getElementById('pr-largo').value    = '';
+  document.getElementById('pr-bolsas').value   = '';
+  document.getElementById('pr-kg').value       = '';
+  document.getElementById('pr-obs').value      = '';
+  document.getElementById('pr-bovina-info').style.display = 'none';
+  document.getElementById('prod-preview').style.display   = 'none';
+
+  // Poblar select de bovinas activas
+  const select = document.getElementById('pr-bovina');
+  const activas = STATE.data.BOVINAS.filter(b =>
+    sanitize(b.ESTADO).toLowerCase() === 'activa'
+  );
+
+  select.innerHTML = '<option value="">— Selecciona una bovina activa —</option>' +
+    activas.map(b => {
+      const kg = parseFloat(b.PESO_DISPONIBLE_KG) || 0;
+      return `<option value="${sanitize(b.ID)}">
+        ${sanitize(b.ANCHO)}×${sanitize(b.ESPESOR)} mm — ${kg.toFixed(1)} kg disponibles (${sanitize(b.PROVEEDOR)})
+      </option>`;
+    }).join('');
+}
+
+function onBovinaSeleccionada() {
+  const id  = sanitize(document.getElementById('pr-bovina').value);
+  const infoDiv = document.getElementById('pr-bovina-info');
+
+  if (!id) { infoDiv.style.display = 'none'; return; }
+
+  const bov = STATE.data.BOVINAS.find(b =>
+    sanitize(b.ID).toLowerCase() === id.toLowerCase()
+  );
+  if (!bov) { infoDiv.style.display = 'none'; return; }
+
+  infoDiv.style.display = 'block';
+  document.getElementById('pr-bov-medida').textContent = `${sanitize(bov.ANCHO)} × ${sanitize(bov.ESPESOR)} mm`;
+  document.getElementById('pr-bov-id').textContent     = 'ID: ' + sanitize(bov.ID);
+  document.getElementById('pr-bov-disponible').textContent = `${parseFloat(bov.PESO_DISPONIBLE_KG).toFixed(1)} kg`;
+  document.getElementById('pr-bov-prov').textContent   = sanitize(bov.PROVEEDOR);
+  document.getElementById('pr-bov-estado').innerHTML   = `<span class="tag tag-activa">ACTIVA</span>`;
+
+  updateProdPreview();
+}
+
+function updateProdPreview() {
+  const id     = sanitize(document.getElementById('pr-bovina').value);
+  const largo  = parseFloat(document.getElementById('pr-largo').value)  || 0;
+  const bolsas = parseInt(document.getElementById('pr-bolsas').value)   || 0;
+  const kg     = parseFloat(document.getElementById('pr-kg').value)     || 0;
+  const prev   = document.getElementById('prod-preview');
+
+  if (!id || !largo || !bolsas || !kg) { prev.style.display = 'none'; return; }
+
+  const bov = STATE.data.BOVINAS.find(b =>
+    sanitize(b.ID).toLowerCase() === id.toLowerCase()
+  );
+  if (!bov) return;
+
+  const disponible = parseFloat(bov.PESO_DISPONIBLE_KG) || 0;
+  const restantes  = Math.max(0, disponible - kg);
+
+  prev.style.display = 'block';
+  document.getElementById('pv-medida-bov').textContent  = `${sanitize(bov.ANCHO)} × ${sanitize(bov.ESPESOR)} mm`;
+  document.getElementById('pv-medida-bls').textContent  = `${sanitize(bov.ANCHO)} × ${largo} × ${sanitize(bov.ESPESOR)} mm`;
+  document.getElementById('pv-bolsas').textContent      = bolsas.toLocaleString('es-PE') + ' unidades';
+  document.getElementById('pv-kg').textContent          = `-${kg.toFixed(1)} kg`;
+  document.getElementById('pv-kg-restantes').textContent = `${restantes.toFixed(1)} kg`;
+}
+
+async function submitProduccion() {
+  const fecha    = sanitize(document.getElementById('pr-fecha').value);
+  const operario = sanitize(document.getElementById('pr-operario').value);
+  const id_bov   = sanitize(document.getElementById('pr-bovina').value);
+  const largo    = sanitize(document.getElementById('pr-largo').value);
+  const bolsas   = sanitize(document.getElementById('pr-bolsas').value);
+  const kg       = sanitize(document.getElementById('pr-kg').value);
+  const obs      = sanitize(document.getElementById('pr-obs').value);
+
+  if (!operario || !id_bov || !largo || !bolsas || !kg) {
+    showToast('Completa todos los campos obligatorios (*)', 'error');
+    return;
+  }
+
+  // Obtener datos de la bovina seleccionada
+  const bov = STATE.data.BOVINAS.find(b =>
+    sanitize(b.ID).toLowerCase() === id_bov.toLowerCase()
+  );
+  if (!bov) { showToast('Bovina no encontrada', 'error'); return; }
+
+  // Validar que no consuma más de lo disponible
+  if (Number(kg) > parseFloat(bov.PESO_DISPONIBLE_KG)) {
+    showToast('⚠️ Los kg consumidos superan el disponible de la bovina', 'error');
+    return;
+  }
+
+  showLoading('Registrando producción...');
+
+  try {
+    const result = await postData('registroProduccion', {
+      fecha, operario,
+      id_bovina:        id_bov,
+      ancho:            Number(bov.ANCHO),
+      espesor:          Number(bov.ESPESOR),
+      largo_corte:      Number(largo),
+      bolsas_producidas: Number(bolsas),
+      kg_consumidos:    Number(kg),
+      observaciones:    obs,
+    });
+
+    if (result.ok) {
+      showToast(`✓ ${Number(bolsas).toLocaleString()} bolsas agregadas al stock`, 'success');
+      await syncData();
+      initProduccionForm();
+    } else {
+      throw new Error(result.error || 'Error desconocido');
+    }
+  } catch(err) {
+    showToast('Error: ' + err.message, 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+// ══════════════════════════════════════════════
+//  🚀 INICIALIZACIÓN
+// ══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Verificar si hay sesión guardada
+  const savedRole = sessionStorage.getItem('wms_role');
+  if (savedRole && CONFIG.PINS[Object.keys(CONFIG.PINS).find(p => CONFIG.PINS[p] === savedRole)]) {
+    STATE.role = savedRole;
+    loginSuccess(savedRole);
+  } else {
+    // Cargar caché para tenerlos disponibles aunque no haya red
+    loadFromCache();
+  }
+
+  // Tecla Enter en PIN (para teclado físico)
+  document.addEventListener('keydown', (e) => {
+    if (STATE.currentScreen !== 'login') return;
+    if (e.key >= '0' && e.key <= '9') pinInput(e.key);
+    if (e.key === 'Backspace') pinDelete();
+    if (e.key === 'Enter') pinConfirm();
+  });
+});
+
+// Guardar rol en sessionStorage al hacer login
+const _loginSuccess = loginSuccess;
+window.loginSuccess = function(role) {
+  sessionStorage.setItem('wms_role', role);
+  _loginSuccess(role);
+};
+
+</script>
+</body>
+</html>
