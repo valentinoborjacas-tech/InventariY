@@ -730,22 +730,18 @@ function parseMedidaCatalogo(medida){
 
 function calcularStockDeSellado(catalogo, selladoRows){
   // ── Acumular millares por ID de catálogo ──────────────────
-  // CRUCE: solo por ANCHO + LARGO + ESPESOR (columnas numéricas)
-  // Sin depender del cliente ni parsear texto de MEDIDA
+  // CRUCE PRINCIPAL:  Cliente + Ancho + Largo + Espesor
+  // CRUCE FALLBACK:   Solo Ancho + Largo + Espesor (si cliente vacío)
   const acum = {};
 
-  // Pre-procesar catálogo: extraer números de ANCHO/LARGO/ESPESOR
-  // El catálogo ahora tiene columnas separadas ANCHO, LARGO, ESPESOR
-  // Si no existen (catálogo viejo), se parsea desde MEDIDA como fallback
+  // Pre-procesar catálogo con columnas numéricas
   const catParsed = catalogo.map(p => {
     let a, l, e;
     if (p.ANCHO && p.LARGO && p.ESPESOR) {
-      // ✅ Nuevas columnas separadas — método principal
       a = parseFloat(san(p.ANCHO))   || 0;
       l = parseFloat(san(p.LARGO))   || 0;
       e = parseFloat(san(p.ESPESOR)) || 0;
     } else {
-      // Fallback: parsear desde texto MEDIDA
       const m = parseMedidaCatalogo(p.MEDIDA || '');
       a = m.a; l = m.l; e = m.e;
     }
@@ -753,37 +749,50 @@ function calcularStockDeSellado(catalogo, selladoRows){
   });
 
   selladoRows.forEach(row => {
-    // Solo procesar filas TERMINADAS
+    // Solo filas TERMINADAS
     const estado = sanLow(row['ESTADO_FINAL']);
     if (estado !== 'terminada') return;
 
     const millares = parseFloat(san(row['MILLARES'])) || 0;
     if (millares <= 0) return;
 
-    // Medidas del sellado (columnas individuales del sheet)
+    const clienteSell = sanLow(row['CLIENTE'] || '');
     const anchoSell   = parseFloat(san(row['ANCHO']))   || 0;
     const largoSell   = parseFloat(san(row['LARGO']))   || 0;
     const espesorSell = parseFloat(san(row['ESPESOR'])) || 0;
 
     if (!anchoSell || !largoSell || !espesorSell) return;
 
-    // Buscar coincidencia en catálogo solo por medidas numéricas
-    // Tolerancia de ±0.15 para cubrir pequeñas diferencias de redondeo
-    const matches = catParsed.filter(p => {
-      if (!p._a || !p._l || !p._e) return false;
-      return Math.abs(p._a - anchoSell)   < 0.15 &&
-             Math.abs(p._l - largoSell)   < 0.15 &&
-             Math.abs(p._e - espesorSell) < 0.15;
-    });
+    // Función para comparar medidas con tolerancia ±0.15
+    const medidaMatch = p =>
+      p._a && p._l && p._e &&
+      Math.abs(p._a - anchoSell)   < 0.15 &&
+      Math.abs(p._l - largoSell)   < 0.15 &&
+      Math.abs(p._e - espesorSell) < 0.15;
+
+    let matches = [];
+
+    if (clienteSell) {
+      // ✅ MÉTODO PRINCIPAL: Cliente + Medida
+      matches = catParsed.filter(p =>
+        sanLow(p.CLIENTE) === clienteSell && medidaMatch(p)
+      );
+
+      // Si no encuentra con cliente exacto, buscar solo por medida como fallback
+      if (matches.length === 0) {
+        console.warn(`Sin match con cliente "${clienteSell}" para ${anchoSell}x${largoSell}x${espesorSell} — intentando solo por medida`);
+        matches = catParsed.filter(p => medidaMatch(p));
+      }
+    } else {
+      // Sin cliente — buscar solo por medida
+      matches = catParsed.filter(p => medidaMatch(p));
+    }
 
     if (matches.length === 0) {
-      // Sin coincidencia — registrar en consola para diagnóstico
-      console.warn(`Sin match: ${anchoSell}x${largoSell}x${espesorSell}`);
+      console.warn(`Sin match: ${anchoSell}x${largoSell}x${espesorSell} cliente="${clienteSell}"`);
       return;
     }
 
-    // Si hay múltiples coincidencias (misma medida, distintos clientes),
-    // sumar los millares a TODAS las referencias que coincidan
     matches.forEach(match => {
       acum[match.ID] = (acum[match.ID] || 0) + millares;
     });
