@@ -780,46 +780,58 @@ function calcularStockDeSellado(catalogo, selladoRows){
     let matches = [];
 
     // ── 1️⃣ MÉTODO PRINCIPAL: ID_BOLSA directo ────────────
+    // Si el registro tiene ID de bolsa, SOLO usamos ese — sin fallback
     if (idBolsa) {
       const found = catById[sanLow(idBolsa)];
       if (found) {
         matches = [found];
-        console.log(`✅ Match directo: ${idBolsa} → ${found.ID}`);
+        console.log(`✅ Match directo: ${idBolsa}`);
       } else {
-        console.warn(`⚠️ ID_BOLSA "${idBolsa}" no encontrado en catálogo — usando fallback`);
+        // ID no encontrado en catálogo — ignorar este registro
+        console.warn(`⚠️ ID "${idBolsa}" no existe en catálogo — registro ignorado`);
+        return; // <-- salir sin sumar nada
       }
     }
 
-    // ── 2️⃣ FALLBACK A: Cliente + Medida ──────────────────
-    if (!matches.length && anchoSell && largoSell && espesorSell) {
+    // ── 2️⃣ FALLBACK: Solo para registros SIN ID de bolsa ─
+    // Registros antiguos que no tenían el campo ID_BOLSA
+    if (!matches.length) {
+      if (!anchoSell || !largoSell || !espesorSell) {
+        console.warn(`❌ Sin datos suficientes para cruzar`);
+        return;
+      }
+
       const medidaMatch = p =>
         p._a && p._l && p._e &&
         Math.abs(p._a - anchoSell)   < 0.15 &&
         Math.abs(p._l - largoSell)   < 0.15 &&
         Math.abs(p._e - espesorSell) < 0.15;
 
+      // Fallback A: Cliente + Medida (más preciso)
       if (clienteSell) {
         matches = catParsed.filter(p =>
           sanLow(p.CLIENTE) === clienteSell && medidaMatch(p)
         );
-        if (matches.length)
-          console.log(`✅ Match por cliente+medida: ${clienteSell} ${anchoSell}x${largoSell}x${espesorSell}`);
       }
 
-      // ── 3️⃣ FALLBACK B: Solo Medida ────────────────────
+      // Fallback B: Solo medida (último recurso)
       if (!matches.length) {
         matches = catParsed.filter(p => medidaMatch(p));
-        if (matches.length)
-          console.warn(`⚠️ Match solo por medida (sin cliente): ${anchoSell}x${largoSell}x${espesorSell}`);
+        if (matches.length > 1) {
+          // Múltiples referencias con misma medida — no podemos saber cuál
+          // es la correcta, así que ignoramos para evitar stock incorrecto
+          console.warn(`⚠️ ${matches.length} referencias con medida ${anchoSell}x${largoSell}x${espesorSell} — registro ambiguo, ignorado`);
+          return;
+        }
+      }
+
+      if (!matches.length) {
+        console.warn(`❌ Sin match: ${anchoSell}x${largoSell}x${espesorSell} cliente="${clienteSell}"`);
+        return;
       }
     }
 
-    if (!matches.length) {
-      console.warn(`❌ Sin match: ID="${idBolsa}" | ${anchoSell}x${largoSell}x${espesorSell} | cliente="${clienteSell}"`);
-      return;
-    }
-
-    // Sumar millares a cada match encontrado
+    // Sumar millares al match encontrado
     matches.forEach(m => {
       acum[m.ID] = (acum[m.ID] || 0) + millares;
     });
